@@ -26,10 +26,8 @@ import bbcar.modelo.Valoracion;
 import bbcar.modelo.Viaje;
 
 @Stateless(name = "BlaBlaCarRemoto")
-public class BlaBlaCarEJB implements BlaBlaCarRemote { 
 	
-	@EJB(beanName = "Contador")
-	private ContadorEJB contador;
+public class BlaBlaCarEJB implements BlaBlaCarRemote {
 	
 	@EJB(beanName="Factoria")
 	private DAOFactoriaLocal factoria;
@@ -52,7 +50,7 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
 	public int login(String usuario, String clave) {
 		Usuario u = this.factoria.getUsuarioDAO().findByUsuario(usuario);
@@ -333,4 +331,5 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
 }
