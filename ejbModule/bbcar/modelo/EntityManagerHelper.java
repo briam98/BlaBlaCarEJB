@@ -13,7 +13,7 @@ public class EntityManagerHelper implements Serializable {
 	private static final ThreadLocal<EntityManager> threadLocal;
 	private static final Logger logger;
 	static {
-		emf = Persistence.createEntityManagerFactory("BlaBlaCar");
+		emf = Persistence.createEntityManagerFactory("BlaBlaCarEJB");
 		threadLocal = new ThreadLocal<EntityManager>();
 		logger = Logger.getLogger("BlaBlaCar");
 		logger.setLevel(Level.ALL);

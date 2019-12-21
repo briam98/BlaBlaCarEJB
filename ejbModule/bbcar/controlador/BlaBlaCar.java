@@ -1,13 +1,7 @@
 package bbcar.controlador;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.List;
-import java.util.ListIterator;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 
 import bbcar.dao.DAOException;
 import bbcar.dao.DAOFactoria;
@@ -78,95 +72,31 @@ public class BlaBlaCar {
 		this.usuarioActual = usuarioActual;
 	}
 
-	public BlaBlaCar() throws DAOException {
-		this.usuarioDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getUsuarioDAO();
-		this.cocheDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getCocheDAO();
-		this.paradaDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getParadaDAO();
-		this.reservaDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getReservaDAO();
-		this.valoracionDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getValoracionDAO();
-		this.viajeDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getViajeDAO();
-		this.provinciaDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getProvinciaDAO();
-		this.municipioDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getMunicipioDAO();
-	}
+//	public BlaBlaCar() throws DAOException {
+//		this.usuarioDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getUsuarioDAO();
+//		this.cocheDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getCocheDAO();
+//		this.paradaDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getParadaDAO();
+//		this.reservaDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getReservaDAO();
+//		this.valoracionDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getValoracionDAO();
+//		this.viajeDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getViajeDAO();
+//		this.provinciaDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getProvinciaDAO();
+//		this.municipioDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getMunicipioDAO();
+//	}
 
-	public boolean registrarUsuario(String usuario, String clave, Date fecha_nacimiento, String profesion, String email,
-			String nombre, String apellidos) {
-		
-		MessageDigest md;
-		String encodedClave = null;
-		try {
-			md = MessageDigest.getInstance(MessageDigestAlgorithms.MD5);
-			md.update(clave.getBytes());
-			byte[] digest = md.digest();
-			byte[] encoded = Base64.encodeBase64(digest);
-			
-			encodedClave = new String(encoded);
-			
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-	      
+//	public boolean registrarUsuario(String usuario, String clave, Date fecha_nacimiento, String profesion, String email,
+//			String nombre, String apellidos) {
+//	}
+//
+//	
+//	public int login(String usuario, String clave) {
+//		
+//	}
+//	
+//	public int addCoche(String matricula, String modelo, Integer anyo, Integer confort) {
+//		
+//	}
 
-		Usuario user = this.usuarioDAO.createUsuario(usuario, encodedClave, fecha_nacimiento, profesion, email, nombre,
-				apellidos);
-
-		if (user == null) {
-			return false;
-		}
-
-		return true;
-	}
-
-	
-	public int login(String usuario, String clave) {
-
-		Usuario u = usuarioDAO.findByUsuario(usuario);
-		
-		if (u == null) {
-			return ERROR_NO_EXISTE_USUARIO;
-		}
-		
-		MessageDigest md;
-		String encodedClave = null;
-		try {
-			md = MessageDigest.getInstance(MessageDigestAlgorithms.MD5);
-			md.update(clave.getBytes());
-			byte[] digest = md.digest();
-			byte[] encoded = Base64.encodeBase64(digest);
-			
-			encodedClave = new String(encoded);
-			
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		}
-		
-		if (!u.isClaveCorrecta(encodedClave)) {
-			return ERROR_CLAVE_INCORRECTA;
-		}
-
-		this.usuarioActual = u;
-		return this.usuarioActual.getId();
-	}
-	
-	public int addCoche(String matricula, String modelo, Integer anyo, Integer confort) {
-		
-		if (existeMatricula(matricula)) {
-			return ERROR_MATRICULA_EXISTENTE;
-		}
-		
-		Coche coche = this.cocheDAO.createCoche(usuarioActual.getId(), matricula, modelo, anyo, confort);
-
-		if (coche == null) {
-			return ERROR_JPA;
-		} 
-		
-		this.usuarioActual = this.usuarioDAO.findById(this.usuarioActual.getId());
-		
-		return EXITO;
-
-	}
-
-	private boolean existeMatricula(String matricula) {
+	public boolean existeMatricula(String matricula) {
 		
 		Coche c = this.cocheDAO.findByMatricula(matricula);
 		
@@ -377,16 +307,8 @@ public class BlaBlaCar {
 		return this.usuarioActual.isConductorValorado(idConductor, reserva.getId());
 	}
 
-	public boolean existeUsuario(String usuario) {
-		
-		Usuario u = this.usuarioDAO.findByUsuario(usuario);
-		
-		if (u == null) {
-			return false;
-		}
-		
-		return true;
-	}
+//	public boolean existeUsuario(String usuario) {
+//	}
 
 	public boolean isReservaPendiente(Integer idReserva) {
 		

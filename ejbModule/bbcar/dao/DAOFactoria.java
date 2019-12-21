@@ -1,6 +1,9 @@
 package bbcar.dao;
 
+import javax.ejb.Stateless;
+
 import bbcar.dao.interfaces.CocheDAO;
+import bbcar.dao.interfaces.DAOFactoriaLocal;
 import bbcar.dao.interfaces.MunicipioDAO;
 import bbcar.dao.interfaces.ParadaDAO;
 import bbcar.dao.interfaces.ProvinciaDAO;
@@ -9,39 +12,64 @@ import bbcar.dao.interfaces.UsuarioDAO;
 import bbcar.dao.interfaces.ValoracionDAO;
 import bbcar.dao.interfaces.ViajeDAO;
 
-public abstract class DAOFactoria {
+@Stateless(name="Factoria")
+public class DAOFactoria implements DAOFactoriaLocal {
 	
-	public abstract ParadaDAO getParadaDAO();
-	public abstract ViajeDAO getViajeDAO();
-	public abstract ReservaDAO getReservaDAO();
-	public abstract UsuarioDAO getUsuarioDAO();
-	public abstract CocheDAO getCocheDAO();
-	public abstract ValoracionDAO getValoracionDAO();
-	public abstract ProvinciaDAO getProvinciaDAO();
-	public abstract MunicipioDAO getMunicipioDAO();
+	public final static int JPA = 2; 
+	
+	protected DAOFactoria factoria;
 
-//	public final static int MYSQL = 1;
-	public final static int JPA = 2;
-
-	public static DAOFactoria getDAOFactoria(int tipo) throws DAOException {
-		switch (tipo) {
-//		case MYSQL: {
-//			try {
-//				return new MySQLDAOFactoria();
-//			} catch (Exception e) {
-//				throw new DAOException(e.getMessage());
-//			}	
-//		}
-		case JPA: {
-			try {
-				return new JPADAOFactoria();
-			} catch (Exception e) {
-				throw new DAOException(e.getMessage());
-			}
-		}
-		default:
-			return null;
-		}
+	@Override
+	public ParadaDAO getParadaDAO() {
+		return factoria.getParadaDAO();
 	}
 
+	@Override
+	public ViajeDAO getViajeDAO() {
+		return factoria.getViajeDAO();
+	}
+
+	@Override
+	public ReservaDAO getReservaDAO() {
+		return factoria.getReservaDAO();
+	}
+
+	@Override
+	public UsuarioDAO getUsuarioDAO() {
+		return factoria.getUsuarioDAO();
+	}
+
+	@Override
+	public CocheDAO getCocheDAO() {
+		return factoria.getCocheDAO();
+	}
+
+	@Override
+	public ValoracionDAO getValoracionDAO() {
+		return factoria.getValoracionDAO();
+	}
+
+	@Override
+	public ProvinciaDAO getProvinciaDAO() {
+		return factoria.getProvinciaDAO();
+	}
+
+	@Override
+	public MunicipioDAO getMunicipioDAO() {
+		return factoria.getMunicipioDAO();
+	}
+
+	@Override
+	public void setDAOFactoria(int tipo) throws DAOException {
+		switch(tipo) {
+		case JPA:
+			try {
+				factoria = new JPADAOFactoria();
+			}
+			catch(Exception e) {
+				throw new DAOException(e.getMessage());
+			}
+			break;
+		}
+	}
 }

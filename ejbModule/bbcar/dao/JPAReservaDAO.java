@@ -2,9 +2,12 @@ package bbcar.dao;
 
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+import javax.ejb.EJB;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
+import bbcar.dao.interfaces.DAOFactoriaLocal;
 import bbcar.dao.interfaces.ReservaDAO;
 import bbcar.modelo.EntityManagerHelper;
 import bbcar.modelo.Reserva;
@@ -12,7 +15,19 @@ import bbcar.modelo.Usuario;
 import bbcar.modelo.Viaje;
 
 public class JPAReservaDAO implements ReservaDAO {
-
+	
+	@EJB(beanName="Factoria")
+	private DAOFactoriaLocal factoria;
+	
+	@PostConstruct
+	public void configurarBlaBlaCarEJB() {
+		try {
+			factoria.setDAOFactoria(DAOFactoria.JPA);
+		} catch(DAOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	@Override
 	public Reserva createReserva(Integer idUsuario, Integer idViaje, String comentario) {
 
@@ -23,13 +38,8 @@ public class JPAReservaDAO implements ReservaDAO {
 		Viaje viaje = null;
 		Usuario usuario = null;
 
-		try {
-			viaje = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getViajeDAO().findById(idViaje);
-			usuario = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getUsuarioDAO().findById(idUsuario);
-		} catch (DAOException e) {
-			e.printStackTrace();
-			return null;
-		}
+		viaje = factoria.getViajeDAO().findById(idViaje);
+		usuario = factoria.getUsuarioDAO().findById(idUsuario);
 		
 
 		Reserva reserva = new Reserva(comentario, viaje, usuario);
