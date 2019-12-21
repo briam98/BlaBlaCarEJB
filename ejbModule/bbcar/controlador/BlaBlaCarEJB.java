@@ -9,7 +9,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import javax.ejb.EJB;
 import javax.ejb.SessionContext;
-import javax.ejb.Stateless;
+import javax.ejb.Stateful;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.MessageDigestAlgorithms;
@@ -18,15 +18,16 @@ import bbcar.dao.DAOException;
 import bbcar.dao.DAOFactoria;
 import bbcar.dao.interfaces.DAOFactoriaLocal;
 import bbcar.modelo.Coche;
+import bbcar.modelo.EstadoReserva;
 import bbcar.modelo.Municipio;
+import bbcar.modelo.Parada;
 import bbcar.modelo.Provincia;
 import bbcar.modelo.Reserva;
 import bbcar.modelo.Usuario;
 import bbcar.modelo.Valoracion;
 import bbcar.modelo.Viaje;
 
-@Stateless(name = "BlaBlaCarRemoto")
-	
+@Stateful(name = "BlaBlaCarRemoto")
 public class BlaBlaCarEJB implements BlaBlaCarRemote {
 	
 	@EJB(beanName="Factoria")
@@ -34,8 +35,9 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 	
 	private Usuario usuarioActual;
 
+	// Dice que es un ejemplo, alomejor se puede quitar
 	@Resource
-	private SessionContext context; //Dice que es un ejemplo, alomejor se puede quitar
+	private SessionContext context;
 
 	@Override
 	public DAOFactoriaLocal getFactoria() {
@@ -121,161 +123,207 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 
 	@Override
 	public Integer registrarViaje(Integer plazas, Double precio) {
-		// TODO Auto-generated method stub
-		return null;
+		Coche coche = this.usuarioActual.getCoche();
+		Viaje viaje = this.factoria.getViajeDAO().createViaje(coche , plazas, precio);
+
+		if (viaje == null) {
+			return -1;
+		}
+		coche.anyadirViaje(viaje);
+
+		return viaje.getId();
 	}
 
 	@Override
 	public Integer registrarParadaOrigen(Integer idViaje, String ciudad, String calle, Integer numero, Integer CP,
 			Date fecha) {
-		// TODO Auto-generated method stub
-		return null;
+		Municipio origen = this.factoria.getMunicipioDAO().findByMunicipio(ciudad);
+		Parada parada = this.factoria.getParadaDAO().createParadaOrigen(idViaje, origen, calle, numero, CP, fecha);
+		
+		if (parada == null) {
+			return -1;
+		}
+		
+		Viaje v = this.usuarioActual.getViaje(idViaje);
+		v.setOrigen(parada);
+		
+		return parada.getId();
 	}
 
 	@Override
 	public Integer registrarParadaDestino(Integer idViaje, String ciudad, String calle, Integer numero, Integer CP,
 			Date fecha) {
-		// TODO Auto-generated method stub
-		return null;
+		Municipio destino = this.factoria.getMunicipioDAO().findByMunicipio(ciudad);
+		Parada parada = this.factoria.getParadaDAO().createParadaDestino(idViaje, destino, calle, numero, CP, fecha);
+		
+		if (parada == null) {
+			return -1;
+		}
+
+		Viaje v = this.usuarioActual.getViaje(idViaje);
+		v.setDestino(parada);
+		return parada.getId();
 	}
 
 	@Override
 	public Integer reservarViaje(Integer idViaje, String comentario) {
-		// TODO Auto-generated method stub
-		return null;
+		Viaje viaje = this.factoria.getViajeDAO().findById(idViaje);
+		if (viaje.getPlazasLibres() > 0) {// && !viaje.yaHaReservado(this.usuarioActual.getId())) {
+			Reserva reserva = this.factoria.getReservaDAO().createReserva(usuarioActual.getId(), idViaje, comentario);
+			this.usuarioActual.addReserva(reserva);
+			return reserva.getId();
+		} else {
+			return -1;
+		}
 	}
 
 	@Override
 	public int aceptarReserva(Reserva reserva) {
-		// TODO Auto-generated method stub
-		return 0;
+		Viaje viaje = this.usuarioActual.getViaje(reserva.getIdViaje());
+
+		reserva.setEstado(EstadoReserva.ACEPTADA);
+		this.factoria.getReservaDAO().actualizarEstado(reserva);
+		viaje.decrementarPlazas();
+
+		return viaje.getPlazasLibres();
 	}
 
 	@Override
 	public void rechazarReserva(Reserva reserva) {
-		// TODO Auto-generated method stub
-		
+		reserva.setEstado(EstadoReserva.RECHAZADA);
+		this.factoria.getReservaDAO().actualizarEstado(reserva);
 	}
 
 	@Override
 	public int valorarUnPasajero(Integer idViaje, Integer idUsuarioPasajero, String comentario, Integer puntuacion) {
-		// TODO Auto-generated method stub
-		return 0;
+		Reserva reserva =this.factoria.getReservaDAO().findByViajeAndUsuario(idViaje, idUsuarioPasajero);
+		
+		Valoracion nuevaValoracion = this.factoria.getValoracionDAO().createValoracion(idUsuarioPasajero, this.usuarioActual.getId(), comentario, puntuacion, reserva);
+		
+		if(nuevaValoracion == null) {
+			return -1;
+		}
+
+		this.usuarioActual.addValoracionEmitida(nuevaValoracion);
+		
+		return nuevaValoracion.getId();
 	}
 
 	@Override
 	public int valorarUnConductor(Integer idViaje, Integer idUsuarioConductor, String comentario, Integer puntuacion) {
-		// TODO Auto-generated method stub
-		return 0;
+		Reserva reservaUsuario = this.usuarioActual.getReservaByIdViaje(idViaje);
+
+		Valoracion nuevaValoracion = this.factoria.getValoracionDAO().createValoracion(idUsuarioConductor, this.usuarioActual.getId() , comentario, puntuacion, reservaUsuario);
+		
+		if (nuevaValoracion == null) {
+			return -1;
+		}
+		
+		this.usuarioActual.addValoracionEmitida(nuevaValoracion);
+		return nuevaValoracion.getId();
 	}
 
 	@Override
 	public List<Viaje> buscarViajesLazy(String municipioOrigen, String municipioDestino, Date fechaHora, int start,
 			int max) {
-		// TODO Auto-generated method stub
-		return null;
+		List<Viaje> aux = this.factoria.getViajeDAO().buscarViajesLazy(municipioOrigen, municipioDestino, fechaHora, start, max, this.usuarioActual.getId());
+		return aux;
 	}
 
 	@Override
 	public Integer countViajes(String ciudadOrigen, String ciudadDestino, Date fechaHora) {
-		// TODO Auto-generated method stub
-		return null;
+		Long aux = this.factoria.getViajeDAO().countViajes(ciudadOrigen, ciudadDestino, fechaHora, this.usuarioActual.getId());
+		return aux.intValue();
 	}
 
 	@Override
 	public Coche getCocheUsuario() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.usuarioActual.getCoche();
 	}
 
 	@Override
 	public boolean isCocheRegistrado() {
-		// TODO Auto-generated method stub
-		return false;
+		return this.usuarioActual != null;
 	}
 
 	@Override
 	public void actualizarCoche(Integer anyo, String matricula, String modelo, Integer nivelConfort) {
-		// TODO Auto-generated method stub
-		
+		this.usuarioActual.actualizarCoche(anyo, matricula, modelo, nivelConfort);
+		this.factoria.getCocheDAO().updateCoche(this.usuarioActual.getCoche());
 	}
 
 	@Override
 	public List<Provincia> getProvincias() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.factoria.getProvinciaDAO().findAll();
 	}
 
 	@Override
 	public List<Municipio> getMunicipios() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.factoria.getMunicipioDAO().findAll();
 	}
 
 	@Override
 	public List<String> getMunicipios(Provincia p) {
-		// TODO Auto-generated method stub
-		return null;
+		return this.factoria.getMunicipioDAO().findAll(p);
 	}
 
 	@Override
 	public List<String> getMunicipios(String nombreProvincia) {
-		// TODO Auto-generated method stub
-		return null;
+		return this.factoria.getMunicipioDAO().findAll(nombreProvincia);
 	}
 
 	@Override
 	public void eliminarViaje(Integer idViaje) {
-		// TODO Auto-generated method stub
-		
+		this.usuarioActual.eliminarViaje(idViaje);
+		this.factoria.getViajeDAO().removeViaje(idViaje);
 	}
 
 	@Override
 	public List<Usuario> getPasajeros(Integer idViaje) {
-		// TODO Auto-generated method stub
-		return null;
+		if(idViaje == null) {
+			return null;
+		}
+		
+		Viaje v = this.factoria.getViajeDAO().findById(idViaje);
+		return v.getPasajeros();
 	}
 
 	@Override
 	public Integer getIdConductor(Integer idViaje) {
-		// TODO Auto-generated method stub
-		return null;
+		Viaje viaje = this.factoria.getViajeDAO().findById(idViaje);
+		return viaje.getIdConductor();
 	}
 
 	@Override
 	public List<Viaje> getViajesConductorRealizados() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.usuarioActual.getViajesRealizados();
 	}
 
 	@Override
 	public List<Viaje> getViajesConductorPendientes() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.usuarioActual.getViajesPendientes();
 	}
 
 	@Override
 	public boolean isValoracionPasajeroHecha(Integer idViaje, Integer idPasajero) {
-		// TODO Auto-generated method stub
-		return false;
+		Reserva reservaPasajero = this.factoria.getReservaDAO().findByViajeAndUsuario(idViaje, idPasajero);
+		return this.usuarioActual.isValoracionPasajeroEmitida(reservaPasajero.getId(), idPasajero);
 	}
 
 	@Override
 	public List<Viaje> getViajesPasajeroRealizados() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.factoria.getViajeDAO().findViajesRealizadosPasajero(this.usuarioActual.getId());
 	}
 
 	@Override
 	public List<Viaje> getViajesPasajeroPendientes() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.factoria.getViajeDAO().findViajesPendientesPasajero(this.usuarioActual.getId());
 	}
 
 	@Override
 	public boolean isValoradoConductor(Integer idViaje, Integer idConductor) {
-		// TODO Auto-generated method stub
-		return false;
+		Reserva reserva = this.usuarioActual.getReservaByIdViaje(idViaje);
+		return this.usuarioActual.isConductorValorado(idConductor, reserva.getId());
 	}
 
 	@Override
@@ -292,44 +340,54 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 
 	@Override
 	public boolean isReservaPendiente(Integer idReserva) {
-		// TODO Auto-generated method stub
-		return false;
+		Reserva r = this.factoria.getReservaDAO().findById(idReserva);
+		return r.isPendiente();
 	}
 
 	@Override
 	public List<Valoracion> getValoracionesRealizadas() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.usuarioActual.getValoracionesEmitidas();
 	}
 
 	@Override
 	public List<Valoracion> getValoracionesRecibidas() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.usuarioActual.getValoracionesRecibidas();
 	}
 
 	@Override
 	public List<Reserva> getReservas() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.usuarioActual.getReservas();
 	}
 
 	@Override
 	public void rechazarOtrasReservas(Integer idViaje) {
-		// TODO Auto-generated method stub
-		
+		this.usuarioActual.rechazarOtrasReservas(idViaje);
+		actualizarReservasRechazadas(idViaje);
+	}
+	
+	private void actualizarReservasRechazadas(Integer idViaje) {
+
+		List<Reserva> reservasRechazadas = this.usuarioActual.getReservasRechazadas(idViaje);
+
+		for (Reserva r : reservasRechazadas) {
+			this.factoria.getReservaDAO().actualizarEstado(r);
+		}
 	}
 
 	@Override
 	public boolean existeMatricula(String matricula) {
-		// TODO Auto-generated method stub
-		return false;
+		Coche c = this.factoria.getCocheDAO().findByMatricula(matricula);
+		
+		if (c == null) {
+			return false;
+		}
+		
+		return true;
 	}
 
 	@Override
 	public boolean isUsuarioLogueado() {
-		// TODO Auto-generated method stub
-		return false;
+		return this.usuarioActual != null;
 	}
 
 }
