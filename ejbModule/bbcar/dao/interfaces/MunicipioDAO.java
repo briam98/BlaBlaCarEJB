@@ -12,4 +12,6 @@ public interface MunicipioDAO {
 	List<String> findAll(Provincia provincia);
 	
 	List<String> findAll(String nombreProvincia);
+
+	Municipio findByMunicipio(String ciudad);
 }

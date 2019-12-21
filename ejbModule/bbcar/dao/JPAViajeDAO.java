@@ -6,7 +6,9 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
-import bbcar.controlador.BlaBlaCar;
+import org.eclipse.persistence.config.HintValues;
+import org.eclipse.persistence.config.QueryHints;
+
 import bbcar.dao.interfaces.ViajeDAO;
 import bbcar.modelo.Coche;
 import bbcar.modelo.EntityManagerHelper;
@@ -14,27 +16,14 @@ import bbcar.modelo.EstadoReserva;
 import bbcar.modelo.Viaje;
 
 public class JPAViajeDAO implements ViajeDAO {
-
 	@Override
-	public Viaje createViaje(Integer idCoche, Integer plazas, Double precio) {
+	public Viaje createViaje(Coche coche, Integer plazas, Double precio) {
 
 		EntityManager em = EntityManagerHelper.getEntityManager();
 		em.getTransaction().begin();
 		
-		
-		Coche coche;
-		try {
-			coche = BlaBlaCar.getInstancia().getFactoria().getCocheDAO().findById(idCoche);
-		} catch (DAOException e1) {
-			e1.printStackTrace();
-			em.close();
-			return null;
-		}
-		
 		Viaje viaje = new Viaje(plazas, precio, coche);
-		
-		coche.anyadirViaje(viaje);
-		
+				
 		try {
 			em.persist(viaje);
 			em.getTransaction().commit();
@@ -61,25 +50,30 @@ public class JPAViajeDAO implements ViajeDAO {
 		
 		return v;
 	}
-
+		
+	@SuppressWarnings("unchecked")
 	@Override
-	public List<Viaje> buscarViajes(String ciudadOrigen, String ciudadDestino, Date fechaHora) {
+	public List<Viaje> buscarViajesLazy(String ciudadOrigen, String ciudadDestino, Date fechaHora, int start, int max, Integer idUsuario) {
 		try {
-			String queryString = "SELECT v FROM Viaje v " + " JOIN FETCH v.reservas r "
-					+ " WHERE r.estado = :estado and v.origen.fecha >= :today ";
+			String queryString = "SELECT v FROM Viaje v " + 
+					" WHERE v.id NOT IN (SELECT r.viaje.id FROM Reserva r WHERE r.usuario.id = :usuario) " + 
+					" and v.origen.fecha_hora >= :today ";
+			queryString += "and v.coche.usuario.id != :usuario ";
+			queryString += "and v.plazasLibres > 0 ";
 			if (ciudadOrigen != null && !ciudadOrigen.trim().isEmpty()) {
-				queryString += " and v.origen.ciudad = :ciudadOrigen ";
+				queryString += " and v.origen.ciudad.municipio = :ciudadOrigen ";
 			}
 			if (ciudadDestino != null && !ciudadDestino.trim().isEmpty()) {
-				queryString += " and v.destino.ciudad = :ciudadDestino ";
+				queryString += " and v.destino.ciudad.municipio = :ciudadDestino ";
 			}
 			if (fechaHora != null) {
-				queryString += " and v.origen.fecha >= :fechaHora ";
+				queryString += " and v.origen.fecha_hora >= :fechaHora ";
 			}
+			queryString += " ORDER BY v.origen.fecha_hora";
 			EntityManager em = EntityManagerHelper.getEntityManager();
 			Query q = em.createQuery(queryString);
-			q.setParameter("estado", EstadoReserva.ACEPTADA);
 			q.setParameter("today", new Date());
+			q.setParameter("usuario", idUsuario);
 			if (ciudadOrigen != null && !ciudadOrigen.trim().isEmpty()) {
 				q.setParameter("ciudadOrigen", ciudadOrigen);
 			}
@@ -90,50 +84,11 @@ public class JPAViajeDAO implements ViajeDAO {
 				q.setParameter("fechaHora", fechaHora);
 			}
 			// Para hacer que se recupera todos los objetos de BBDD
-//			q.setHint(QueryHints.REFRESH, HintValues.TRUE);
-			return q.getResultList();
-		} catch (RuntimeException re) {
-			re.printStackTrace();
-			throw (re);
-		}
-	}
-	
-	@Override
-	public List<Viaje> buscarViajesLazy(String ciudadOrigen, String ciudadDestino, Date fechaHora, int start, int max) {
-		try {
-			String queryString = "SELECT v FROM Viaje v " + " JOIN FETCH v.reservas r "
-					+ " WHERE r.estado = :estado and v.origen.fecha >= :today ";
+			q.setHint(QueryHints.REFRESH, HintValues.TRUE);
 			
-			if (ciudadOrigen != null && !ciudadOrigen.trim().isEmpty()) {
-				queryString += " and v.origen.ciudad = :ciudadOrigen ";
-			}
-			if (ciudadDestino != null && !ciudadDestino.trim().isEmpty()) {
-				queryString += " and v.destino.ciudad = :ciudadDestino ";
-			}
-			if (fechaHora != null) {
-				queryString += " and v.origen.fecha >= :fechaHora ";
-			}
-			
-			EntityManager em = EntityManagerHelper.getEntityManager();
-			Query q = em.createQuery(queryString);
-			q.setParameter("estado", EstadoReserva.ACEPTADA);
-			q.setParameter("today", new Date());
-			
-			if (ciudadOrigen != null && !ciudadOrigen.trim().isEmpty()) {
-				q.setParameter("ciudadOrigen", ciudadOrigen);
-			}
-			if (ciudadDestino != null && !ciudadDestino.trim().isEmpty()) {
-				q.setParameter("ciudadDestino", ciudadDestino);
-			}
-			if (fechaHora != null) {
-				q.setParameter("fechaHora", fechaHora);
-			}
-			
-			// Para hacer que se recupera todos los objetos de BBDD
-//			q.setHint(QueryHints.REFRESH, HintValues.TRUE);
-
 			q.setFirstResult(start);
 			q.setMaxResults(max);
+			
 			return q.getResultList();
 		} catch (RuntimeException re) {
 			re.printStackTrace();
@@ -142,23 +97,24 @@ public class JPAViajeDAO implements ViajeDAO {
 	}
 		
 	@Override
-	public Long countViajes(String ciudadOrigen, String ciudadDestino, Date fechaHora) {
+	public Long countViajes(String ciudadOrigen, String ciudadDestino, Date fechaHora, Integer idUsuario) {
 		try {
-			String queryString = "SELECT count(v) FROM Viaje v " + " JOIN FETCH v.reservas r "
-					+ " WHERE r.estado = :estado and v.origen.fecha >= :today ";
+			String queryString = "SELECT count(v) FROM Viaje v " + " WHERE v.origen.fecha_hora >= :today ";
+			queryString += "and v.coche.usuario.id != :usuario ";
+			queryString += "and v.plazasLibres > 0 ";
 			if (ciudadOrigen != null && !ciudadOrigen.trim().isEmpty()) {
-				queryString += " and v.origen.ciudad = :ciudadOrigen ";
+				queryString += " and v.origen.ciudad.municipio = :ciudadOrigen ";
 			}
 			if (ciudadDestino != null && !ciudadDestino.trim().isEmpty()) {
-				queryString += " and v.destino.ciudad = :ciudadDestino ";
+				queryString += " and v.destino.ciudad.municipio = :ciudadDestino ";
 			}
 			if (fechaHora != null) {
-				queryString += " and v.origen.fecha >= :fechaHora ";
+				queryString += " and v.origen.fecha_hora >= :fechaHora ";
 			}
 			EntityManager em = EntityManagerHelper.getEntityManager();
 			Query q = em.createQuery(queryString);
-			q.setParameter("estado", EstadoReserva.ACEPTADA);
 			q.setParameter("today", new Date());
+			q.setParameter("usuario", idUsuario);
 			if (ciudadOrigen != null && !ciudadOrigen.trim().isEmpty()) {
 				q.setParameter("ciudadOrigen", ciudadOrigen);
 			}
@@ -169,12 +125,68 @@ public class JPAViajeDAO implements ViajeDAO {
 				q.setParameter("fechaHora", fechaHora);
 			}
 			// Para hacer que se recupera todos los objetos de BBDD
-//			q.setHint(QueryHints.REFRESH, HintValues.TRUE);
+			q.setHint(QueryHints.REFRESH, HintValues.TRUE);
 			return (Long) q.getSingleResult();
 		} catch (RuntimeException re) {
 			re.printStackTrace();
 			throw (re);
 		}
 	}
-	
+
+	@Override
+	public void removeViaje(Integer idViaje) {
+		
+		EntityManager em = EntityManagerHelper.getEntityManager();
+		
+		Viaje viaje = em.find(Viaje.class, idViaje);
+		
+		em.getTransaction().begin();
+		em.remove(viaje);
+		em.getTransaction().commit();
+		
+	}
+
+	@Override
+	public List<Viaje> findViajesRealizadosPasajero(Integer idUsuario) {
+		
+		EntityManager em = EntityManagerHelper.getEntityManager();
+
+		String query2 = "SELECT v FROM Viaje v WHERE v.id IN ("
+				+ "SELECT r.viaje.id "
+				+ "FROM Reserva r "
+				+ "WHERE r.usuario.id = :idUsuario AND r.estado = :estadoAceptada)" 
+				+ "AND v.destino.fecha_hora < :fechaActual";
+
+		Query q2 = em.createQuery(query2);
+		q2.setParameter("idUsuario", idUsuario);
+		q2.setParameter("estadoAceptada", EstadoReserva.ACEPTADA);
+		q2.setParameter("fechaActual", new Date());
+
+		@SuppressWarnings("unchecked")
+		List<Viaje> listViajes = q2.getResultList();
+		
+		return listViajes;
+	}
+
+	@Override
+	public List<Viaje> findViajesPendientesPasajero(Integer idUsuario) {
+		
+		EntityManager em = EntityManagerHelper.getEntityManager();
+
+		String query2 = "SELECT v FROM Viaje v WHERE v.id IN ("
+				+ "SELECT r.viaje.id "
+				+ "FROM Reserva r "
+				+ "WHERE r.usuario.id = :idUsuario)" 
+				+ "AND v.origen.fecha_hora > :fechaActual";
+
+		Query q2 = em.createQuery(query2);
+		q2.setParameter("idUsuario", idUsuario);
+		q2.setParameter("fechaActual", new Date());
+
+		@SuppressWarnings("unchecked")
+		List<Viaje> listViajes = q2.getResultList();
+		
+		return listViajes;
+	}
+
 }

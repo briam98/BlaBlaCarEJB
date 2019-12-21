@@ -90,11 +90,4 @@ public class JPAUsuarioDAO implements UsuarioDAO {
 		return list.get(0);
 
 	}
-
-	@Override
-	public boolean login(String usuario, String clave) {
-		Usuario aux = findByUsuarioAndPassword(usuario, clave);
-		
-		return (aux != null);
-	}
 }

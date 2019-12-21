@@ -19,7 +19,8 @@ public class Parada implements Serializable {
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	private Integer id;
 	
-	private String ciudad;
+	@ManyToOne
+	private Municipio ciudad;
 	
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date fecha_hora;
@@ -31,7 +32,7 @@ public class Parada implements Serializable {
 		super();
 	}
 
-	public Parada(String ciudad, Date fecha, Direccion direccion) {
+	public Parada(Municipio ciudad, Date fecha, Direccion direccion) {
 		this.ciudad = ciudad;
 		this.fecha_hora = fecha;
 		this.direccion = direccion;
@@ -45,11 +46,11 @@ public class Parada implements Serializable {
 		this.id = id;
 	}
 
-	public String getCiudad() {
+	public Municipio getCiudad() {
 		return ciudad;
 	}
 
-	public void setCiudad(String ciudad) {
+	public void setCiudad(Municipio ciudad) {
 		this.ciudad = ciudad;
 	}
 

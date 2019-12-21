@@ -2,6 +2,7 @@ package bbcar.modelo;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -106,7 +107,7 @@ public class Coche implements Serializable {
 	}
    
 	//Métodos útiles
-	
+
 	public void anyadirViaje(Viaje viaje) {
 		this.listaViajes.add(viaje);
 	}
@@ -144,5 +145,86 @@ public class Coche implements Serializable {
 		this.matricula = matricula;
 		this.modelo = modelo;
 		this.confort = nivelConfort;
+	}
+
+	public Integer getIdConductor() {
+		return this.usuario.getId();
+	}
+
+	public boolean isPlazasLibres(Integer idViaje) {
+		
+		for (Viaje v: this.listaViajes) {
+			if (v.getId().equals(idViaje)) {
+				return v.isPlazasDisponibles();
+			}
+		}
+		return false;
+	}
+
+	public Viaje getViaje(Integer idViaje) {
+		
+		for (Viaje v: this.listaViajes) {
+			if (v.getId().equals(idViaje)) {
+				return v;
+			}
+		}
+		
+		return null;
+	}
+
+	public void rechazarOtrasReservas(Integer idViaje) {
+
+		for (Viaje v : this.listaViajes) {
+			if (v.getId().equals(idViaje)) {
+				v.rechazarOtrasReservas();
+			}
+		}
+	}
+
+	public List<Viaje> getViajesRealizados() {
+		
+		LinkedList<Viaje> viajesRealizados = new LinkedList<Viaje>(); 
+		
+		for (Viaje v: this.listaViajes) {
+			if (v.isRealizado()) {
+				viajesRealizados.add(v);
+			}
+		}
+		
+		return viajesRealizados;
+	}
+
+	public List<Viaje> getViajesPendientes() {
+
+		LinkedList<Viaje> viajesPendientes = new LinkedList<Viaje>(); 
+
+		for (Viaje v: this.listaViajes) {
+			if (v.isPendiente()) {
+				viajesPendientes.add(v);
+			}
+		}
+
+		return viajesPendientes;
+	}
+
+	public List<Reserva> getReservasRechazadas(Integer idViaje) {
+		
+		for (Viaje v : this.listaViajes) {
+			if (v.getId().equals(idViaje)) {
+				return v.getReservasRechazadas();
+			}
+		}
+		
+		return null;
+	}
+
+	public void eliminarViaje(Integer idViaje) {
+		Iterator<Viaje> it= this.listaViajes.iterator();
+		while(it.hasNext()) {
+			Viaje v = it.next();
+			if (v.getId().equals(idViaje)) {
+				it.remove();
+			}
+		}
 	}
 }

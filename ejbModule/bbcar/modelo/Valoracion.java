@@ -85,5 +85,17 @@ public class Valoracion implements Serializable {
 	public void setUsuarioValorado(Usuario usuarioRecibidor) {
 		this.usuarioValorado = usuarioRecibidor;
 	}
+
+	public boolean isReservaEquals(Integer idReserva) {
+		return this.reserva.getId().equals(idReserva);
+	}
+
+	public boolean isEmisorEquasl(Integer idConductor) {
+		return this.usuarioEmisor.getId().equals(idConductor);
+	}
+
+	public boolean isUsuarioValoradoEquals(Integer idPasajero) {
+		return this.usuarioValorado.getId().equals(idPasajero);
+	}
    
 }

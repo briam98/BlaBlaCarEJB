@@ -47,13 +47,14 @@ public class JPAValoracionDAO implements ValoracionDAO {
 	}
 
 	@Override
-	public List<Valoracion> findByIdsReservas(List<Integer> idsReservas) {
+	public List<Valoracion> findByIdsReservasAndUsuario(List<Integer> idsReservas, Integer idUsuarioEmisor) {
 
 		EntityManager em = EntityManagerHelper.getEntityManager();
 		
-		String jpql = "SELECT v FROM Valoracion v WHERE v.reserva IN :idsReservas";
+		String jpql = "SELECT v FROM Valoracion v WHERE v.reserva IN :idsReservas AND v.usuarioEmisor.id = :idUsuarioEmisor";
 		Query q = em.createQuery(jpql);
 		q.setParameter("idsReservas", idsReservas);
+		q.setParameter("idUsuarioEmisor", idUsuarioEmisor);
 		
 		
 		@SuppressWarnings("unchecked")

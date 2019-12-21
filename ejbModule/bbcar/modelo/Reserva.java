@@ -90,7 +90,8 @@ public class Reserva implements Serializable {
 	}
 	
 	public void rechazarReserva() {
-		this.setEstado(EstadoReserva.RECHAZADA);	}
+		this.setEstado(EstadoReserva.RECHAZADA);
+	}
 
 	public List<Valoracion> getValoraciones() {
 		return valoraciones;
@@ -106,5 +107,26 @@ public class Reserva implements Serializable {
 
 	public void setUsuario(Usuario usuario) {
 		this.usuario = usuario;
+	}
+
+	public boolean isAceptada() {
+		return this.estado.equals(EstadoReserva.ACEPTADA);
+	}
+
+	public int getUsuarioId() {
+		return this.usuario.getId();
+
+	}
+
+	public boolean isPendiente() {
+		return this.estado.equals(EstadoReserva.PENDIENTE);
+	}
+
+	public Integer getIdViaje() {
+		return this.viaje.getId();
+	}
+
+	public boolean isRechazada() {
+		return this.estado.equals(EstadoReserva.RECHAZADA);
 	}
 }

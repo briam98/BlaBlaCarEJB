@@ -224,4 +224,84 @@ public class Usuario implements Serializable {
 		
 	}
 
+	public Integer getCocheId() {
+
+		if (this.coche == null) {
+			return -1;
+		}
+		
+		return this.coche.getId();
+	}
+
+	public Reserva getReservaByIdViaje(Integer idViaje) {
+		
+		for (Reserva r: this.reservas) {
+			if (r.getViaje().getId().equals(idViaje)) {
+				return r;
+			}
+		}
+		return null;
+	}
+
+	public boolean isValoracionEmitida(Reserva reserva) {
+		
+		for(Valoracion v: this.valoracionesEmitidas) {
+			if (v.getReserva().getId().equals(reserva.getId())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public boolean isValoracionPasajeroEmitida(Integer idReserva, Integer idPasajero) {
+		
+		for (Valoracion v: this.valoracionesEmitidas) {
+			if (v.isReservaEquals(idReserva) && v.isEmisorEquasl(this.id) && v.isUsuarioValoradoEquals(idPasajero)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	public boolean isConductorValorado(Integer idConductor, Integer idReserva) {
+		for (Valoracion v: this.valoracionesEmitidas) {
+			if (v.isReservaEquals(idReserva) && v.isEmisorEquasl(this.id) && v.isUsuarioValoradoEquals(idConductor)) {
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	public boolean isPlazasLibres(Integer idViaje) {
+		return this.coche.isPlazasLibres(idViaje);
+	}
+
+	public Viaje getViaje(Integer idViaje) {
+		return this.coche.getViaje(idViaje);
+	}
+
+	public void rechazarOtrasReservas(Integer idViaje) {
+		
+		this.coche.rechazarOtrasReservas(idViaje);
+	}
+
+	public List<Viaje> getViajesRealizados() {
+		return this.coche.getViajesRealizados();
+	}
+
+	public List<Viaje> getViajesPendientes() {
+		return this.coche.getViajesPendientes();
+	}
+
+	public List<Reserva> getReservasRechazadas(Integer idViaje) {
+		
+		return this.coche.getReservasRechazadas(idViaje);
+	}
+
+	public void eliminarViaje(Integer idViaje) {
+		
+		this.coche.eliminarViaje(idViaje);
+	}
 }

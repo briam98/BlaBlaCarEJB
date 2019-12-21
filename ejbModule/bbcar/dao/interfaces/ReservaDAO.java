@@ -14,4 +14,6 @@ public interface ReservaDAO {
 	
 	public Reserva findById(Integer idReserva);
 
+	public void actualizarEstado(Reserva reserva);
+
 }

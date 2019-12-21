@@ -4,7 +4,6 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
-import bbcar.controlador.BlaBlaCar;
 import bbcar.dao.interfaces.CocheDAO;
 import bbcar.modelo.Coche;
 import bbcar.modelo.EntityManagerHelper;
@@ -19,7 +18,7 @@ public class JPACocheDAO implements CocheDAO {
 		
 		Usuario usuario;
 		try {
-			usuario = BlaBlaCar.getInstancia().getFactoria().getUsuarioDAO().findById(idUsuario);
+			usuario = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getUsuarioDAO().findById(idUsuario);
 		} catch (DAOException e) {
 			e.printStackTrace();
 			return null;
@@ -30,7 +29,7 @@ public class JPACocheDAO implements CocheDAO {
 		}
 		
 		Coche c = new Coche(matricula, modelo, confort, anyo, usuario);
-		
+
 		usuario.setCoche(c);
 		
 		try {

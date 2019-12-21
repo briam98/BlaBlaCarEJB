@@ -11,6 +11,7 @@ import bbcar.dao.interfaces.ProvinciaDAO;
 
 public class JPAProvinciaDAO implements ProvinciaDAO {
 
+	@SuppressWarnings("unchecked")
 	public List<Provincia> findAll() {
 		try {
 			String queryString = "SELECT p FROM Provincia p ";

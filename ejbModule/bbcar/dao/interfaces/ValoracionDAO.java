@@ -8,7 +8,7 @@ import bbcar.modelo.Valoracion;
 public interface ValoracionDAO {
 	public Valoracion createValoracion(Integer idUsuarioRecibidor, Integer idUsuarioEmisor, String comentario, Integer puntuacion, Reserva reserva);
 	
-	public List<Valoracion> findByIdsReservas(List<Integer> idsReservas);
+	public List<Valoracion> findByIdsReservasAndUsuario(List<Integer> idsReservas, Integer idUsuarioEmisor);
 
 	public Valoracion findByIdReservaAndUsuario(Integer idReserva, Integer idEmisor);
 

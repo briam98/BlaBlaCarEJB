@@ -2,6 +2,7 @@ package bbcar.modelo;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.CascadeType;
@@ -29,6 +30,7 @@ public class Viaje implements Serializable {
 	private Integer id;
 
 	private Integer num_plazas;
+	private Integer plazasLibres;
 
 	private Double precio;
 
@@ -53,8 +55,69 @@ public class Viaje implements Serializable {
 		this.num_plazas = num_plazas;
 		this.precio = precio;
 		this.coche = coche;
+		this.plazasLibres = num_plazas;
 	}
 
+	// Métodos útiles
+	
+	
+	public Date getFechaFinal() {
+		return this.destino.getFecha_hora();
+	}
+
+	public boolean isPediente() {
+		
+		for (Reserva r: this.reservas) {
+			if (r.getEstado().equals(EstadoReserva.PENDIENTE)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public Integer getCocheId() {
+		if (this.coche != null) {
+			return this.coche.getId();			
+		} else {
+			return -1;
+		}
+	}
+
+	public List<Usuario> getPasajeros() {
+		
+		LinkedList<Usuario> pasajeros = new LinkedList<Usuario>();
+		
+		for(Reserva r: this.reservas) {
+			if(r.isAceptada()) {
+				pasajeros.add(r.getUsuario());
+			}
+		}
+		
+		return pasajeros;
+	}
+
+	public Integer getIdConductor() {
+		return this.coche.getIdConductor();
+	}
+
+	public boolean isPlazasDisponibles() {
+		return this.plazasLibres > 0;
+	}
+
+	public void decrementarPlazas() {
+		
+		this.plazasLibres--;
+	}
+
+	public void rechazarOtrasReservas() {
+		for (Reserva r : this.reservas) {
+			if (r.isPendiente()) {
+				r.rechazarReserva();
+			}
+		}
+	}
+	
+	//GETTERS y SETTERS
 	public Integer getId() {
 		return id;
 	}
@@ -115,20 +178,29 @@ public class Viaje implements Serializable {
 		this.destino = destino;
 	}
 	
-	// Métodos útiles
-	
-	public Date getFechaFinal() {
-		return this.destino.getFecha_hora();
+	public int getPlazasLibres() {
+		return plazasLibres;
 	}
 
-	public boolean isPediente() {
+	public boolean isRealizado() {
+		return this.destino.getFecha_hora().before(new Date());
+	}
+
+	public boolean isPendiente() {
+		return this.origen.getFecha_hora().after(new Date());
+	}
+
+	public List<Reserva> getReservasRechazadas() {
 		
-		for(Reserva r: this.reservas) {
-			if(r.getEstado().equals(EstadoReserva.PENDIENTE)) {
-				return true;
+		LinkedList<Reserva> reservasRechazadas = new LinkedList<Reserva>();
+		
+		for (Reserva r : this.reservas) {
+			if (r.isRechazada()) {
+				reservasRechazadas.add(r);
 			}
 		}
-		return false;
+		return reservasRechazadas;
 	}
+
 
 }

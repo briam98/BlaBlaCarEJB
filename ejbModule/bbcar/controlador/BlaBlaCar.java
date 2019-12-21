@@ -1,58 +1,53 @@
 package bbcar.controlador;
 
-import java.util.ArrayList;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.ejb.EJB;
-import javax.ejb.SessionContext;
-import javax.ejb.Stateless;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.digest.MessageDigestAlgorithms;
 
 import bbcar.dao.DAOException;
 import bbcar.dao.DAOFactoria;
-import bbcar.dao.interfaces.*;
-import bbcar.modelo.*;
+import bbcar.dao.interfaces.CocheDAO;
+import bbcar.dao.interfaces.MunicipioDAO;
+import bbcar.dao.interfaces.ParadaDAO;
+import bbcar.dao.interfaces.ProvinciaDAO;
+import bbcar.dao.interfaces.ReservaDAO;
+import bbcar.dao.interfaces.UsuarioDAO;
+import bbcar.dao.interfaces.ValoracionDAO;
+import bbcar.dao.interfaces.ViajeDAO;
+import bbcar.modelo.Coche;
+import bbcar.modelo.EstadoReserva;
+import bbcar.modelo.Municipio;
+import bbcar.modelo.Parada;
+import bbcar.modelo.Provincia;
+import bbcar.modelo.Reserva;
+import bbcar.modelo.Usuario;
+import bbcar.modelo.Valoracion;
+import bbcar.modelo.Viaje;
 
-@Stateless(name="BlaBlaCarRemoto")
-public class BlaBlaCar implements BlaBlaCarRemote {
+public class BlaBlaCar {
 	
-	@EJB(beanName="Contador")
-	private ContadorEJB contador;
-	
-	@EJB(beanName="Factoria")
-	private DAOFactoriaLocal factoria;
-		
-	@Resource
-	private SessionContext context;
-	
-	public DAOFactoriaLocal getFactoria() {
-		return factoria;
-	}
-	
-	@PostConstruct
-	public void configurarBlaBlaCarEJB() {
-		try {
-			factoria.setDAOFactoria(DAOFactoria.JPA);
-		} catch (DAOException e) {
-			e.printStackTrace();
-		}
-		this.usuarioDAO = factoria.getUsuarioDAO();
-		this.cocheDAO = factoria.getCocheDAO();
-		this.paradaDAO = factoria.getParadaDAO();
-		this.reservaDAO = factoria.getReservaDAO();
-		this.valoracionDAO = factoria.getValoracionDAO();
-		this.viajeDAO = factoria.getViajeDAO();
-		this.provinciaDAO = factoria.getProvinciaDAO();
-		this.municipioDAO = factoria.getMunicipioDAO();
-	}
-	
-	// CONSTANTES DE ERROR
+	// CONSTANTES DE ERROR PARA INDICAR A LA VISTA LO QUE FALLA 
 	public final static int EXITO = 0;
-	public final static int ERROR_JPA = 1;
-	public final static int ERROR_MATRICULA_EXISTENTE = 2;
+	
+	public final static int ERROR_JPA = -1;
+	
+	public final static int ERROR_MATRICULA_EXISTENTE = -2;
+	
+	public final static int ERROR_REGISTRAR_PARADA_ORIGEN = -3;
+	public final static int ERROR_REGISTRAR_PARADA_DESTINO = -4;
+	
+	public final static int ERROR_REGISTRAR_VIAJE = -5;
 
+	public final static int ERROR_NO_EXISTE_USUARIO = -6;
+	public final static int ERROR_CLAVE_INCORRECTA = -7;
+	
+	
+	
 	private static BlaBlaCar unicaInstancia;
 
 	public static BlaBlaCar getInstancia() throws DAOException {
@@ -83,18 +78,36 @@ public class BlaBlaCar implements BlaBlaCarRemote {
 		this.usuarioActual = usuarioActual;
 	}
 
+	public BlaBlaCar() throws DAOException {
+		this.usuarioDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getUsuarioDAO();
+		this.cocheDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getCocheDAO();
+		this.paradaDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getParadaDAO();
+		this.reservaDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getReservaDAO();
+		this.valoracionDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getValoracionDAO();
+		this.viajeDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getViajeDAO();
+		this.provinciaDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getProvinciaDAO();
+		this.municipioDAO = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getMunicipioDAO();
+	}
+
 	public boolean registrarUsuario(String usuario, String clave, Date fecha_nacimiento, String profesion, String email,
 			String nombre, String apellidos) {
 		
-		//TODO Estas comprobaciones las debemos de llevar en la parte de la vista
-		Usuario u = this.usuarioDAO.findByUsuario(usuario);
-
-		if(u != null) {
-			return false;
+		MessageDigest md;
+		String encodedClave = null;
+		try {
+			md = MessageDigest.getInstance(MessageDigestAlgorithms.MD5);
+			md.update(clave.getBytes());
+			byte[] digest = md.digest();
+			byte[] encoded = Base64.encodeBase64(digest);
+			
+			encodedClave = new String(encoded);
+			
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
 		}
+	      
 
-		// Solo deberiamos hacer el create
-		Usuario user = this.usuarioDAO.createUsuario(usuario, clave, fecha_nacimiento, profesion, email, nombre,
+		Usuario user = this.usuarioDAO.createUsuario(usuario, encodedClave, fecha_nacimiento, profesion, email, nombre,
 				apellidos);
 
 		if (user == null) {
@@ -102,23 +115,42 @@ public class BlaBlaCar implements BlaBlaCarRemote {
 		}
 
 		return true;
-
 	}
 
 	
-	public boolean login(String usuario, String clave) {
-		if (factoria.getUsuarioDAO().login(usuario, clave)) {
-			System.out.println("Correcto - Login correctos por app " + contador.siguienteValor());
-			return false;
-		} else {
-			System.out.println("Incorrecto - Login correctos por app " + contador.valorActual());
-			return false;
-		}
-	}
+	public int login(String usuario, String clave) {
 
+		Usuario u = usuarioDAO.findByUsuario(usuario);
+		
+		if (u == null) {
+			return ERROR_NO_EXISTE_USUARIO;
+		}
+		
+		MessageDigest md;
+		String encodedClave = null;
+		try {
+			md = MessageDigest.getInstance(MessageDigestAlgorithms.MD5);
+			md.update(clave.getBytes());
+			byte[] digest = md.digest();
+			byte[] encoded = Base64.encodeBase64(digest);
+			
+			encodedClave = new String(encoded);
+			
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		
+		if (!u.isClaveCorrecta(encodedClave)) {
+			return ERROR_CLAVE_INCORRECTA;
+		}
+
+		this.usuarioActual = u;
+		return this.usuarioActual.getId();
+	}
+	
 	public int addCoche(String matricula, String modelo, Integer anyo, Integer confort) {
 		
-		if(existeMatricula(matricula)) {
+		if (existeMatricula(matricula)) {
 			return ERROR_MATRICULA_EXISTENTE;
 		}
 		
@@ -138,7 +170,7 @@ public class BlaBlaCar implements BlaBlaCarRemote {
 		
 		Coche c = this.cocheDAO.findByMatricula(matricula);
 		
-		if(c == null){
+		if (c == null) {
 			return false;
 		}
 		
@@ -146,184 +178,116 @@ public class BlaBlaCar implements BlaBlaCarRemote {
 	}
 
 	public Integer registrarViaje(Integer plazas, Double precio) {
-		
-		// TODO Llevar a la vista
-		if (plazas <= 0 || precio < 0) {
-			return -1;
-		}
-		
-		if (this.usuarioActual.isConductor()) {
-			Coche coche = this.usuarioActual.getCoche();
-			Viaje viaje = this.viajeDAO.createViaje(coche.getId() , plazas, precio);
-			return viaje.getId();
-		} else {
-			return -1;
-		}
-	}
 
+		Coche coche = this.usuarioActual.getCoche();
+		Viaje viaje = this.viajeDAO.createViaje(coche , plazas, precio);
+
+		if (viaje == null) {
+			return ERROR_REGISTRAR_VIAJE;
+		}
+		coche.anyadirViaje(viaje);
+
+		return viaje.getId();
+	}
+	
 	public Integer registrarParadaOrigen(Integer idViaje, String ciudad, String calle, Integer numero,
 			Integer CP, Date fecha) {
+
+		Municipio origen = this.municipioDAO.findByMunicipio(ciudad);
+		Parada parada = paradaDAO.createParadaOrigen(idViaje, origen, calle, numero, CP, fecha);
 		
-		if (idViaje > 0 && numero >= 0 && CP > 0) {
-			
-			Parada parada = paradaDAO.createParadaOrigen(idViaje, ciudad, calle, numero, CP, fecha);
-			return parada.getId();			
+		if (parada == null) {
+			return ERROR_REGISTRAR_PARADA_ORIGEN;
 		}
-		return -1;
+		
+		Viaje v = this.usuarioActual.getViaje(idViaje);
+		v.setOrigen(parada);
+		
+		return parada.getId();
 	}
 	
 	public Integer registrarParadaDestino(Integer idViaje, String ciudad, String calle, Integer numero,
 			Integer CP, Date fecha) {
-		if (idViaje > 0 && numero >= 0 && CP > 0) {
-			
-			Parada parada = paradaDAO.createParadaDestino(idViaje, ciudad, calle, numero, CP, fecha);
-			return parada.getId();			
+		
+		Municipio destino = this.municipioDAO.findByMunicipio(ciudad);
+		Parada parada = paradaDAO.createParadaDestino(idViaje, destino, calle, numero, CP, fecha);
+		
+		if (parada == null) {
+			return ERROR_REGISTRAR_PARADA_DESTINO;
 		}
-		return -1;
+
+		Viaje v = this.usuarioActual.getViaje(idViaje);
+		v.setDestino(parada);
+		return parada.getId();
 	}
 
 	public Integer reservarViaje(Integer idViaje, String comentario) {
-
+			
+		Viaje viaje = viajeDAO.findById(idViaje);
+		if (viaje.getPlazasLibres() > 0) {// && !viaje.yaHaReservado(this.usuarioActual.getId())) {
 			Reserva reserva = reservaDAO.createReserva(usuarioActual.getId(), idViaje, comentario);
 			this.usuarioActual.addReserva(reserva);
 			return reserva.getId();
-	}
-
-
-	public boolean aceptarReserva(Integer idReserva) {
-		Reserva r = this.reservaDAO.findById(idReserva);
-		if (r != null) {
-			r.aceptarReserva();
-			return true;
+		} else {
+			return -1;
 		}
-		return false;
+	}
+
+	public int aceptarReserva(Reserva reserva) {
+		
+		Viaje viaje = this.usuarioActual.getViaje(reserva.getIdViaje());
+
+		reserva.setEstado(EstadoReserva.ACEPTADA);
+		this.reservaDAO.actualizarEstado(reserva);
+		viaje.decrementarPlazas();
+
+		return viaje.getPlazasLibres();
 	}
 
 
-	public boolean rechazarReserva(Integer idReserva) {
-		Reserva r = this.reservaDAO.findById(idReserva);
-		if (r != null) {
-			r.rechazarReserva();
-			return true;
-		}
-		return false;
+	public void rechazarReserva(Reserva reserva) {
+		reserva.setEstado(EstadoReserva.RECHAZADA);
+		this.reservaDAO.actualizarEstado(reserva);
 	}
 
-	public boolean valorarViajeConductor(Integer idViaje, Integer idUsuarioPasajero, String comentario, Integer puntuacion) {
-
-
-		Viaje v = this.viajeDAO.findById(idViaje);
-
-		if (this.isFechaActualPosterior(v.getFechaFinal()) && !this.isValoracionesCompletadas(idViaje)) {
+	public int valorarUnPasajero(Integer idViaje, Integer idUsuarioPasajero, String comentario, Integer puntuacion) {
 			
 			Reserva reserva = this.reservaDAO.findByViajeAndUsuario(idViaje, idUsuarioPasajero);
-			
-			Valoracion valoracion = this.valoracionDAO.findByReservaAndReceptor(reserva.getId(), idUsuarioPasajero);
-			if(valoracion != null) {
-				return false;
-			}
 			
 			Valoracion nuevaValoracion = this.valoracionDAO.createValoracion(idUsuarioPasajero, this.usuarioActual.getId(), comentario, puntuacion, reserva);
 			
 			if(nuevaValoracion == null) {
-				return false;
+				return ERROR_JPA;
 			}
 
-			return true;
-
-		} else {
-			return false;
-		}
+			this.usuarioActual.addValoracionEmitida(nuevaValoracion);
+			
+			return nuevaValoracion.getId();
 	}
 
-	public boolean valorarViajePasajero(Integer idViaje, Integer idUsuarioConductor, String comentario, Integer puntuacion) {
+	public int valorarUnConductor(Integer idViaje, Integer idUsuarioConductor, String comentario, Integer puntuacion) {
 
-		Viaje v = this.viajeDAO.findById(idViaje);	
+			Reserva reservaUsuario = this.usuarioActual.getReservaByIdViaje(idViaje);
 
-		if(this.isFechaActualPosterior(v.getFechaFinal()) && !this.isValoracionHecha(idViaje)) {
-			
-			Reserva reserva = this.reservaDAO.findByViajeAndUsuario(idViaje, this.usuarioActual.getId());
-
-			Valoracion nuevaValoracion = this.valoracionDAO.createValoracion(idUsuarioConductor, this.usuarioActual.getId() , comentario, puntuacion, reserva);
+			Valoracion nuevaValoracion = this.valoracionDAO.createValoracion(idUsuarioConductor, this.usuarioActual.getId() , comentario, puntuacion, reservaUsuario);
 			
 			if (nuevaValoracion == null) {
-				return false;
+				return ERROR_JPA;
 			}
 			
-			return true;
+			this.usuarioActual.addValoracionEmitida(nuevaValoracion);
+			return nuevaValoracion.getId();
 
-		} else {
-			return false;
-		}
-	}
-
-	//TODO
-//	public Collection<Viaje> listarViajes(Integer idUsuario, boolean pendientes, boolean propios, Object ordenFecha, Object ordenCiudad) {
-//		// El usuario quiere listar todos las reservas en estado de pendiente que pueda
-//		// aceptar/rechazar (Usuario conductor)
-//		
-//		ArrayList<Viaje> listadoViajes = new ArrayList<Viaje>();
-//		if (pendientes) {
-//			
-//			listadoViajes = (ArrayList<Viaje>) this.usuarioActual.getListViajesPendientes();
-//			
-//		// El usuario quiere ver todos los viajes reservados (sea o no conductor)
-//		} else if (propios) {
-//			
-//			listadoViajes = (ArrayList<Viaje>) this.usuarioActual.getViajesReservados();
-//		}
-//		// El usuario quiere listar todos los viajes disponibles que no sean suyos para reservar
-//		
-//		
-//			
-//		return listadoViajes;
-//	}
-
-	// MÉTODOS AUXILIARES
-	
-	private boolean isFechaActualPosterior(Date fecha) {
-
-		Date fecha_actual = new Date();
-		return fecha_actual.after(fecha);
-	}
-
-	private boolean isValoracionesCompletadas(Integer idViaje) {
-
-		List<Reserva> reservas = this.usuarioActual.getReservasByViaje(idViaje);
-
-		ArrayList<Integer> idsReservas = new ArrayList<Integer>();
-
-		for(Reserva r : reservas) {
-			idsReservas.add(r.getId());
-		}
-		
-		List<Valoracion> valoraciones = this.valoracionDAO.findByIdsReservas(idsReservas);
-		
-		return reservas.size() == valoraciones.size();
 	}
 	
-	private boolean isValoracionHecha(Integer idViaje) {
-		Reserva reserva = this.reservaDAO.findByViajeAndUsuario(idViaje, this.usuarioActual.getId());
-		
-		Valoracion v = this.valoracionDAO.findByIdReservaAndUsuario(reserva.getId(), this.usuarioActual.getId());
-		
-		return  v != null;
-	}
+	public List<Viaje> buscarViajesLazy(String municipioOrigen, String municipioDestino, Date fechaHora, int start, int max) {
+		List<Viaje> aux = this.viajeDAO.buscarViajesLazy(municipioOrigen, municipioDestino, fechaHora, start, max, this.usuarioActual.getId());
 
-	public Object getUsuario(String username, String password) {
-		return this.usuarioDAO.findByUsuarioAndPassword(username, password);
-	}
-
-	public List<Viaje> buscarViajes(String municipioOrigen, String municipioDestino, Date fechaHora) {
-		return this.viajeDAO.buscarViajes(municipioOrigen, municipioDestino, fechaHora);
-	}
-	
-	public List<Viaje> buscarViajesLazy(String ciudadOrigen, String ciudadDestino, Date fechaHora, int start, int max) {
-		return this.viajeDAO.buscarViajesLazy(ciudadOrigen, ciudadDestino, fechaHora, start, max);
+		return aux;
 	}
 	
 	public Integer countViajes(String ciudadOrigen, String ciudadDestino, Date fechaHora) {
-		Long aux = this.viajeDAO.countViajes(ciudadOrigen, ciudadDestino, fechaHora);
+		Long aux = this.viajeDAO.countViajes(ciudadOrigen, ciudadDestino, fechaHora, this.usuarioActual.getId());
 		return aux.intValue();
 	}
 	
@@ -360,4 +324,101 @@ public class BlaBlaCar implements BlaBlaCarRemote {
 		return this.municipioDAO.findAll(nombreProvincia);
 	}
 
+	public void eliminarViaje(Integer idViaje) {
+		this.usuarioActual.eliminarViaje(idViaje);
+		this.viajeDAO.removeViaje(idViaje);
+	}
+
+	public List<Usuario> getPasajeros(Integer idViaje) {
+		
+		if(idViaje == null) {
+			return null;
+		}
+		
+		Viaje v = this.viajeDAO.findById(idViaje);
+		return v.getPasajeros();
+	}
+
+	public Integer getIdConductor(Integer idViaje) {
+		Viaje viaje = this.viajeDAO.findById(idViaje);
+		
+		return viaje.getIdConductor();
+	}
+
+	public List<Viaje> getViajesConductorRealizados() {
+		
+		return this.usuarioActual.getViajesRealizados();
+	}
+
+	public List<Viaje> getViajesConductorPendientes() {
+		
+		return this.usuarioActual.getViajesPendientes();
+	}
+
+	public boolean isValoracionPasajeroHecha(Integer idViaje, Integer idPasajero) {
+		
+		Reserva reservaPasajero = this.reservaDAO.findByViajeAndUsuario(idViaje, idPasajero);
+		
+		return this.usuarioActual.isValoracionPasajeroEmitida(reservaPasajero.getId(), idPasajero);
+	}
+
+	public List<Viaje> getViajesPasajeroRealizados() {
+		return this.viajeDAO.findViajesRealizadosPasajero(this.usuarioActual.getId());
+	}
+
+	public List<Viaje> getViajesPasajeroPendientes() {
+		return this.viajeDAO.findViajesPendientesPasajero(this.usuarioActual.getId());
+	}
+
+	public boolean isValoradoConductor(Integer idViaje, Integer idConductor) {
+		
+		Reserva reserva = this.usuarioActual.getReservaByIdViaje(idViaje);
+		
+		return this.usuarioActual.isConductorValorado(idConductor, reserva.getId());
+	}
+
+	public boolean existeUsuario(String usuario) {
+		
+		Usuario u = this.usuarioDAO.findByUsuario(usuario);
+		
+		if (u == null) {
+			return false;
+		}
+		
+		return true;
+	}
+
+	public boolean isReservaPendiente(Integer idReserva) {
+		
+		Reserva r = this.reservaDAO.findById(idReserva);
+		return r.isPendiente();
+	}
+
+	public List<Valoracion> getValoracionesRealizadas() {
+		return this.usuarioActual.getValoracionesEmitidas();
+	}
+
+	public List<Valoracion> getValoracionesRecibidas() {
+		return this.usuarioActual.getValoracionesRecibidas();
+	}
+
+	public List<Reserva> getReservas() {
+		return this.usuarioActual.getReservas();
+	} 
+
+	public void rechazarOtrasReservas(Integer idViaje) {
+		
+		this.usuarioActual.rechazarOtrasReservas(idViaje);
+		
+		actualizarReservasRechazadas(idViaje);
+	}
+	
+	private void actualizarReservasRechazadas(Integer idViaje) {
+		
+		List<Reserva> reservasRechazadas = this.usuarioActual.getReservasRechazadas(idViaje);
+		
+		for (Reserva r : reservasRechazadas) {
+			this.reservaDAO.actualizarEstado(r);
+		}
+	}
 }

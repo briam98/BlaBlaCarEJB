@@ -5,7 +5,6 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
-import bbcar.controlador.BlaBlaCar;
 import bbcar.dao.interfaces.ReservaDAO;
 import bbcar.modelo.EntityManagerHelper;
 import bbcar.modelo.Reserva;
@@ -25,8 +24,8 @@ public class JPAReservaDAO implements ReservaDAO {
 		Usuario usuario = null;
 
 		try {
-			viaje = BlaBlaCar.getInstancia().getFactoria().getViajeDAO().findById(idViaje);
-			usuario = BlaBlaCar.getInstancia().getFactoria().getUsuarioDAO().findById(idUsuario);
+			viaje = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getViajeDAO().findById(idViaje);
+			usuario = DAOFactoria.getDAOFactoria(DAOFactoria.JPA).getUsuarioDAO().findById(idUsuario);
 		} catch (DAOException e) {
 			e.printStackTrace();
 			return null;
@@ -37,7 +36,6 @@ public class JPAReservaDAO implements ReservaDAO {
 		
 		usuario.addReserva(reserva);
 		viaje.addReserva(reserva);
-		usuario.addReserva(reserva);
 		
 		// Comenzamos la transacción y en caso de que algo falle hacemos un rollback y
 		// devolvemos null.
@@ -117,6 +115,17 @@ public class JPAReservaDAO implements ReservaDAO {
 		}
 		
 		return reservas.get(0);
+	}
+
+	@Override
+	public void actualizarEstado(Reserva reserva) {
+		EntityManager em = EntityManagerHelper.getEntityManager();
+
+		em.getTransaction().begin();
+
+		em.merge(reserva);
+
+		em.getTransaction().commit();
 	}
 
 }
