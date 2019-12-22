@@ -178,28 +178,29 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 	}
 
 	@Override
-	public int aceptarReserva(Integer idReserva, Integer idViaje) {
-		
-		Viaje viaje = this.usuarioActual.getViaje(idViaje);
+    public int aceptarReserva(Integer idReserva, Integer idViaje) {
 
-		Reserva reserva = viaje.getReservaById(idReserva);
-		
-		reserva.setEstado(EstadoReserva.ACEPTADA);
-		this.factoria.getReservaDAO().actualizarEstado(reserva);
-		viaje.decrementarPlazas();
+        Viaje viaje = this.usuarioActual.getViaje(idViaje);
 
-		return viaje.getPlazasLibres();
-	}
+        Reserva reserva = viaje.getReservaById(idReserva);
 
-	@Override
-	public void rechazarReserva(Integer idReserva, Integer idViaje) {
-		Viaje viaje = this.usuarioActual.getViaje(idViaje);
+        reserva.setEstado(EstadoReserva.ACEPTADA);
+        this.factoria.getReservaDAO().actualizarEstado(reserva);
+        viaje.decrementarPlazas();
+        this.factoria.getViajeDAO().actualizarViaje(viaje);
 
-		Reserva reserva = viaje.getReservaById(idReserva);
-		
-		reserva.setEstado(EstadoReserva.RECHAZADA);
-		this.factoria.getReservaDAO().actualizarEstado(reserva);
-	}
+        return viaje.getPlazasLibres();
+    }
+
+    @Override
+    public void rechazarReserva(Integer idReserva, Integer idViaje) {
+        Viaje viaje = this.usuarioActual.getViaje(idViaje);
+
+        Reserva reserva = viaje.getReservaById(idReserva);
+
+        reserva.setEstado(EstadoReserva.RECHAZADA);
+        this.factoria.getReservaDAO().actualizarEstado(reserva);
+    }
 
 	@Override
 	public int valorarUnPasajero(Integer idViaje, Integer idUsuarioPasajero, String comentario, Integer puntuacion) {

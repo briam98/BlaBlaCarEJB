@@ -22,5 +22,7 @@ public interface ViajeDAO {
 
 	public List<Viaje> findViajesPendientesPasajero(Integer idUsuario);
 
+    public void actualizarViaje(Viaje viaje);
+
 
 }

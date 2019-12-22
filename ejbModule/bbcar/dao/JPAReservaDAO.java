@@ -29,7 +29,6 @@ public class JPAReservaDAO implements ReservaDAO {
 
 		Reserva reserva = new Reserva(comentario, viaje, usuario);
 		
-		usuario.addReserva(reserva);
 		viaje.addReserva(reserva);
 		
 		// Comenzamos la transacción y en caso de que algo falle hacemos un rollback y

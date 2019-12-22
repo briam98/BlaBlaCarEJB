@@ -188,5 +188,16 @@ public class JPAViajeDAO implements ViajeDAO {
 		
 		return listViajes;
 	}
+	
+	@Override
+    public void actualizarViaje(Viaje viaje) {
+        EntityManager em = EntityManagerHelper.getEntityManager();
+
+        em.getTransaction().begin();
+
+        em.merge(viaje);
+
+        em.getTransaction().commit();
+    }
 
 }
