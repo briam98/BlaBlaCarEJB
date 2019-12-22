@@ -203,5 +203,16 @@ public class Viaje implements Serializable {
 		return reservasRechazadas;
 	}
 
+	public Reserva getReservaById(Integer idReserva) {
+		Reserva r = null;
+		for (Reserva re : this.reservas) {
+			if (re.getId().equals(idReserva)) {
+				r = re;
+			}
+		}
+		
+		return r;
+	}
+
 
 }

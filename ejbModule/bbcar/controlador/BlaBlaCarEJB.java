@@ -178,9 +178,12 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 	}
 
 	@Override
-	public int aceptarReserva(Reserva reserva) {
-		Viaje viaje = this.usuarioActual.getViaje(reserva.getIdViaje());
+	public int aceptarReserva(Integer idReserva, Integer idViaje) {
+		
+		Viaje viaje = this.usuarioActual.getViaje(idViaje);
 
+		Reserva reserva = viaje.getReservaById(idReserva);
+		
 		reserva.setEstado(EstadoReserva.ACEPTADA);
 		this.factoria.getReservaDAO().actualizarEstado(reserva);
 		viaje.decrementarPlazas();
@@ -189,7 +192,11 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 	}
 
 	@Override
-	public void rechazarReserva(Reserva reserva) {
+	public void rechazarReserva(Integer idReserva, Integer idViaje) {
+		Viaje viaje = this.usuarioActual.getViaje(idViaje);
+
+		Reserva reserva = viaje.getReservaById(idReserva);
+		
 		reserva.setEstado(EstadoReserva.RECHAZADA);
 		this.factoria.getReservaDAO().actualizarEstado(reserva);
 	}
@@ -388,10 +395,5 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 	@Override
 	public boolean isUsuarioLogueado() {
 		return this.usuarioActual != null;
-	}
-
-	
-	public List<Reserva> getReservasConductor(Integer idViaje) {
-		return this.factoria.getReservaDAO().getReservasConductor(idViaje);
 	}
 }

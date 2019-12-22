@@ -96,20 +96,10 @@ public class JPAReservaDAO implements ReservaDAO {
 	public Reserva findById(Integer idReserva) {
 		
 		EntityManager em = EntityManagerHelper.getEntityManager();
-
-		String jpql = "SELECT r FROM Reserva r WHERE r.id = :idReserva";
 		
-		Query q = em.createQuery(jpql);
-		q.setParameter("idReserva", idReserva);
+		Reserva reserva = em.find(Reserva.class, idReserva);
 		
-		@SuppressWarnings("unchecked")
-		List<Reserva> reservas = q.getResultList();
-		
-		if(reservas.isEmpty()) {
-			return null;
-		}
-		
-		return reservas.get(0);
+		return reserva;
 	}
 
 	@Override
@@ -122,24 +112,4 @@ public class JPAReservaDAO implements ReservaDAO {
 
 		em.getTransaction().commit();
 	}
-
-	@Override
-	public List<Reserva> getReservasConductor(Integer idViaje) {
-		EntityManager em = EntityManagerHelper.getEntityManager();
-
-		String jpql = "SELECT r FROM Reserva r WHERE r.viaje.idViaje = :idViaje";
-		
-		Query q = em.createQuery(jpql);
-		q.setParameter("idReserva", idViaje);
-		
-		@SuppressWarnings("unchecked")
-		List<Reserva> reservas = q.getResultList();
-		
-		if(reservas.isEmpty()) {
-			return null;
-		}
-		
-		return reservas;
-	}
-
 }

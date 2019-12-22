@@ -15,7 +15,4 @@ public interface ReservaDAO {
 	public Reserva findById(Integer idReserva);
 
 	public void actualizarEstado(Reserva reserva);
-
-	public List<Reserva> getReservasConductor(Integer idViaje);
-
 }

@@ -35,9 +35,9 @@ public interface BlaBlaCarRemote {
 
 	public Integer reservarViaje(Integer idViaje, String comentario);
 
-	public int aceptarReserva(Reserva reserva);
+	public int aceptarReserva(Integer  idReserva, Integer idViaje);
 
-	public void rechazarReserva(Reserva reserva);
+	public void rechazarReserva(Integer idReserva, Integer idViaje);
 
 	public int valorarUnPasajero(Integer idViaje, Integer idUsuarioPasajero, String comentario, Integer puntuacion);
 
@@ -94,6 +94,4 @@ public interface BlaBlaCarRemote {
 	public void rechazarOtrasReservas(Integer idViaje);
 	
 	public boolean existeMatricula(String matricula);
-	
-	public List<Reserva> getReservasConductor(Integer idViaje);
 }
