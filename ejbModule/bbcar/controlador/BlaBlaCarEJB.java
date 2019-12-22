@@ -35,9 +35,6 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 	
 	private Usuario usuarioActual;
 
-	// Dice que es un ejemplo, alomejor se puede quitar
-	@Resource
-	private SessionContext context;
 
 	@Override
 	public DAOFactoriaLocal getFactoria() {
