@@ -1,10 +1,16 @@
 package bbcar.modelo;
 
+import java.io.Serializable;
+
 import javax.persistence.Embeddable;
 
 @Embeddable
-public class Direccion {
+public class Direccion implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6676856992368694285L;
 	private String calle;
 	private Integer numero;
 	private Integer CP;

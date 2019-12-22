@@ -20,13 +20,13 @@ public class Valoracion implements Serializable {
 	private String comentario;
 	private Integer puntuacion;
 	
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.EAGER)
 	private Usuario usuarioEmisor;
 	
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.EAGER)
 	private Usuario usuarioValorado;
 	
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.EAGER)
 	private Reserva reserva;
 		
 	public Valoracion() {

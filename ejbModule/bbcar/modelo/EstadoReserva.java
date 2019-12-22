@@ -1,5 +1,7 @@
 package bbcar.modelo;
 
-public enum EstadoReserva {
+import java.io.Serializable;
+
+public enum EstadoReserva implements Serializable {
 	PENDIENTE, ACEPTADA, RECHAZADA;
 }

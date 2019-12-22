@@ -94,4 +94,6 @@ public interface BlaBlaCarRemote {
 	public void rechazarOtrasReservas(Integer idViaje);
 	
 	public boolean existeMatricula(String matricula);
+	
+	public List<Reserva> getReservasConductor(Integer idViaje);
 }

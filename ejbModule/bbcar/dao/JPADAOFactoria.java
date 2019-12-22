@@ -1,7 +1,6 @@
 package bbcar.dao;
 
 import bbcar.dao.interfaces.CocheDAO;
-import bbcar.dao.interfaces.DAOFactoriaLocal;
 import bbcar.dao.interfaces.MunicipioDAO;
 import bbcar.dao.interfaces.ParadaDAO;
 import bbcar.dao.interfaces.ProvinciaDAO;

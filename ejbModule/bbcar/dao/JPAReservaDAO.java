@@ -2,12 +2,9 @@ package bbcar.dao;
 
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.EJB;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
-import bbcar.dao.interfaces.DAOFactoriaLocal;
 import bbcar.dao.interfaces.ReservaDAO;
 import bbcar.modelo.EntityManagerHelper;
 import bbcar.modelo.Reserva;
@@ -15,18 +12,6 @@ import bbcar.modelo.Usuario;
 import bbcar.modelo.Viaje;
 
 public class JPAReservaDAO implements ReservaDAO {
-	
-	@EJB(beanName="Factoria")
-	private DAOFactoriaLocal factoria;
-	
-	@PostConstruct
-	public void configurarBlaBlaCarEJB() {
-		try {
-			factoria.setDAOFactoria(DAOFactoria.JPA);
-		} catch(DAOException e) {
-			e.printStackTrace();
-		}
-	}
 	
 	@Override
 	public Reserva createReserva(Integer idUsuario, Integer idViaje, String comentario) {
@@ -38,8 +23,8 @@ public class JPAReservaDAO implements ReservaDAO {
 		Viaje viaje = null;
 		Usuario usuario = null;
 
-		viaje = factoria.getViajeDAO().findById(idViaje);
-		usuario = factoria.getUsuarioDAO().findById(idUsuario);
+		viaje = em.find(Viaje.class, idViaje);
+		usuario = em.find(Usuario.class, idUsuario);
 		
 
 		Reserva reserva = new Reserva(comentario, viaje, usuario);
@@ -136,6 +121,25 @@ public class JPAReservaDAO implements ReservaDAO {
 		em.merge(reserva);
 
 		em.getTransaction().commit();
+	}
+
+	@Override
+	public List<Reserva> getReservasConductor(Integer idViaje) {
+		EntityManager em = EntityManagerHelper.getEntityManager();
+
+		String jpql = "SELECT r FROM Reserva r WHERE r.viaje.idViaje = :idViaje";
+		
+		Query q = em.createQuery(jpql);
+		q.setParameter("idReserva", idViaje);
+		
+		@SuppressWarnings("unchecked")
+		List<Reserva> reservas = q.getResultList();
+		
+		if(reservas.isEmpty()) {
+			return null;
+		}
+		
+		return reservas;
 	}
 
 }

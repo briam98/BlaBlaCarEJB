@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -34,7 +35,7 @@ public class Coche implements Serializable {
 	@OneToOne(mappedBy="coche")
 	private Usuario usuario;
 	
-	@OneToMany(mappedBy="coche")
+	@OneToMany(mappedBy="coche", fetch=FetchType.EAGER)
 	private List<Viaje> listaViajes;
 
 	public Coche() {

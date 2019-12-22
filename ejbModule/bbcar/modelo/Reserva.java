@@ -7,6 +7,7 @@ import java.util.List;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -29,16 +30,16 @@ public class Reserva implements Serializable {
 
 	private String comentario;
 
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.EAGER)
 	private Viaje viaje;
 	
-	@ManyToOne
+	@ManyToOne(fetch=FetchType.EAGER)
 	private Usuario usuario;
 
 	@Enumerated(EnumType.STRING)
 	private EstadoReserva estado;
 
-	@OneToMany(mappedBy="reserva")
+	@OneToMany(mappedBy="reserva", fetch=FetchType.EAGER)
 	private List<Valoracion> valoraciones;
 
 	public Reserva() {

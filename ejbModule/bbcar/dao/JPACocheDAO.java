@@ -2,39 +2,23 @@ package bbcar.dao;
 
 import java.util.List;
 
-import javax.annotation.PostConstruct;
-import javax.ejb.EJB;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
-import bbcar.controlador.BlaBlaCarEJB;
 import bbcar.dao.interfaces.CocheDAO;
-import bbcar.dao.interfaces.DAOFactoriaLocal;
 import bbcar.modelo.Coche;
 import bbcar.modelo.EntityManagerHelper;
 import bbcar.modelo.Usuario;
 
 public class JPACocheDAO implements CocheDAO {
 	
-	@EJB(beanName="Factoria")
-	private DAOFactoriaLocal factoria;
-	
-	@PostConstruct
-	public void configurarBlaBlaCarEJB() {
-		try {
-			factoria.setDAOFactoria(DAOFactoria.JPA);
-		} catch(DAOException e) {
-			e.printStackTrace();
-		}
-	}
-
 	@Override
 	public Coche createCoche(Integer idUsuario, String matricula, String modelo, Integer anyo, Integer confort) {
 		EntityManager em = EntityManagerHelper.getEntityManager();
 		em.getTransaction().begin();
 		
 		Usuario usuario;
-		usuario = this.factoria.getUsuarioDAO().findById(idUsuario);
+		usuario = em.find(Usuario.class, idUsuario);
 		
 		if (usuario == null) {
 			return null;

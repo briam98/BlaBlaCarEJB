@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -42,13 +43,13 @@ public class Usuario implements Serializable {
 	@OneToOne
 	private Coche coche;
 	
-	@OneToMany(mappedBy="usuarioValorado")
+	@OneToMany(mappedBy="usuarioValorado", fetch=FetchType.EAGER)
 	private List<Valoracion> valoracionesRecibidas;
 	
-	@OneToMany(mappedBy="usuarioEmisor")
+	@OneToMany(mappedBy="usuarioEmisor", fetch=FetchType.EAGER)
 	private List<Valoracion> valoracionesEmitidas;
 	
-	@OneToMany(mappedBy="usuario")
+	@OneToMany(mappedBy="usuario", fetch=FetchType.EAGER)
 	private List<Reserva> reservas;
 	
 	public Usuario() {

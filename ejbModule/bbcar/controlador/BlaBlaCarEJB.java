@@ -168,7 +168,7 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 	@Override
 	public Integer reservarViaje(Integer idViaje, String comentario) {
 		Viaje viaje = this.factoria.getViajeDAO().findById(idViaje);
-		if (viaje.getPlazasLibres() > 0) {// && !viaje.yaHaReservado(this.usuarioActual.getId())) {
+		if (viaje.getPlazasLibres() > 0) {
 			Reserva reserva = this.factoria.getReservaDAO().createReserva(usuarioActual.getId(), idViaje, comentario);
 			this.usuarioActual.addReserva(reserva);
 			return reserva.getId();
@@ -243,7 +243,7 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 
 	@Override
 	public boolean isCocheRegistrado() {
-		return this.usuarioActual != null;
+		return this.usuarioActual.getCoche() != null;
 	}
 
 	@Override
@@ -390,4 +390,8 @@ public class BlaBlaCarEJB implements BlaBlaCarRemote {
 		return this.usuarioActual != null;
 	}
 
+	
+	public List<Reserva> getReservasConductor(Integer idViaje) {
+		return this.factoria.getReservaDAO().getReservasConductor(idViaje);
+	}
 }
